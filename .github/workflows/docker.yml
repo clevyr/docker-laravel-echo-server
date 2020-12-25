@@ -10,9 +10,27 @@ env:
   image: clevyr/laravel-echo-server
 
 jobs:
-  build:
-    name: Build Image
+  gen-matrix:
+    name: Generate Matrix
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.gen-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Generate Matrix
+        id: gen-matrix
+        run: |
+          printf '::set-output name=matrix::%s' \
+            "$(python3 ./scripts/versions.py "$image")"
+
+  build:
+    name: Build Node ${{ matrix.node_version }} Image
+    runs-on: ubuntu-latest
+    needs: [gen-matrix]
+    strategy:
+      matrix: ${{ fromJson(needs.gen-matrix.outputs.matrix) }}
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -30,8 +48,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          key: ${{ runner.os }}-buildx-${{ matrix.node_version }}-${{ github.sha }}
           restore-keys: |
+            ${{ runner.os }}-buildx-${{ matrix.node_version }}-
             ${{ runner.os }}-buildx-
 
       - name: Build and Push
@@ -40,10 +59,10 @@ jobs:
         with:
           pull: true
           push: true
-          platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8,linux/ppc64le,linux/s390x
+          platforms: linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8,linux/ppc64le,linux/s390x
           tags: |
-            ${{ env.image }}:${{ github.sha }}
-            ${{ env.image }}:latest
+            ${{ env.image }}:${{ matrix.node_version }}
+            ${{ matrix.extra_tags }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,mode=max,dest=/tmp/.buildx-cache-new
 
