@@ -1,7 +1,8 @@
 FROM node:16-alpine
 WORKDIR /data
 
-RUN npm install -g laravel-echo-server
+RUN npm install --location=global \
+        laravel-echo-server
 
 COPY laravel-echo-server.json .
 
