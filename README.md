@@ -7,3 +7,7 @@ Node Docker container with [tlaverdure/laravel-echo-server](https://github.com/t
 ```sh
 docker pull clevyr/laravel-echo-server
 ```
+
+## Environment Variables
+
+Refer to the [DotEnv section of tlaverdure/laravel-echo-server](https://github.com/tlaverdure/laravel-echo-server#dotenv) for an environment variable listing.
